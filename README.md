@@ -9,7 +9,7 @@ v0.1
 
 This is a tiny program I personally use it daily.
 It allows me to check my currencies without logging every 10 minutes on Kraken website.
-This is also very useful for developpers on the Krakenex API thanks to dynamically extracted data.
+This is also very useful for developers on the Krakenex API thanks to dynamically extracted data.
 
 This program features:
 
