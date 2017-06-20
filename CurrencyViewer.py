@@ -159,4 +159,3 @@ for i in range(len(fiat_index)):
 
 values.update({'Total' : total})
 print(values)
-#We could store our data in a dict type
