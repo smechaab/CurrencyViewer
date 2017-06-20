@@ -2,7 +2,7 @@
 """
 Created on Wed Jun  7 19:21:28 2017
 
-@author: Sémy Mechaab
+@author: smechaab
 
  Prints the account balance and will in future send it via email,
  with obvisouly your own email adress (SOON).
