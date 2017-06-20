@@ -51,3 +51,4 @@ TODO:
 -----
 1. Manage exceptions with crypto/fiat currencies pair markets that doesn't exist on Kraken
 2. Add e-mail sender with timer or interruptions to user (user will add its own e-mail to ensure privacy)
+3. Write a log file periodically
