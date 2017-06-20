@@ -31,9 +31,9 @@ import krakenex
 import re
 import sys
 
-currencies = [] #List of differents currencies owned by client
-market = []     #List of actual market currency owned by client
-balance = []    #List of the actual market balance of crypto currencies
+currencies = [] #List of differents currencies owned by user
+market = []     #List of markets concerned by currencies in user's wallet
+balance = []    #List of the differents amount of crypto currencies owned by client
 
 #%%Extracting data from Kraken Exchange API
 k = krakenex.API()
@@ -44,7 +44,7 @@ data = k.query_private('Balance')
 data = str(data['result'])
 
 #DEBUG
-#data = data.replace("XXRP","ZUSD")
+data = data.replace("XXRP","ZUSD")
 #Can be used to test if others currencies (e.g ZPJY) are compatibles with others market pairs you are into. 
 
 #%%We find currencies concerned by the client wallet
