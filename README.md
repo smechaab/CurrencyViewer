@@ -8,8 +8,7 @@ Author : smechaab
 
 Credits
 -------
-This code is based on Krakenex Python3 API by veox.
-Krakenex Python3 API: https://github.com/veox/python3-krakenex
+This code is based on Krakenex Python3 API by veox: https://github.com/veox/python3-krakenex
 
 * v0.1
 
