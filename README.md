@@ -6,8 +6,8 @@ If this script helped you or if you have any feedback, please don't hesitate to 
 
 Author : smechaab
 
-Credits : This code is based on *Krakenex Python3 API_ by veox.
-.. _Krakenex Python3 API : https://github.com/veox/python3-krakenex
+Credits : This code is based on * Krakenex Python3 API_ by veox.
+.. _Krakenex Python3 API: https://github.com/veox/python3-krakenex
 
 * v0.1
 
