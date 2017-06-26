@@ -1,10 +1,13 @@
 krakenex-CurrencyViewer
 =======================
-This is a short python program which displays your crypto currencies and convert the equivalent on fiat moneys according to your Kraken wallet.
+This is a short python3 program which displays your crypto currencies and convert the equivalent on fiat moneys according to your Kraken wallet.
 
 If this script helped you or if you have any feedback, please don't hesitate to contact me.
 
 Author : smechaab
+
+Credits : This code is based on *Krakenex Python3 API_ by veox.
+.. _Krakenex Python3 API : https://github.com/veox/python3-krakenex
 
 * v0.1
 
