@@ -52,7 +52,7 @@ if data['error'] :
 else : data = str(data['result'])
 
 #DEBUG
-data = data.replace("XXRP","ZJPY")
+#data = data.replace("XXRP","ZJPY")
 #data = data.replace("XZEC","ZUSD")
 #Can be used to test if others currencies (e.g ZPJY) are compatibles with others market pairs you are into. 
 
@@ -163,7 +163,8 @@ for i in range(len(market)):
     if(market[i][0]=='D'): crypto_tmp = market[i][0:4]
     else: crypto_tmp = 'X'+market[i][0:3]
     
-    values.update({market[i] : balance[currencies.index(crypto_tmp)] * price[i]}) #We find the index of the crypto in temp variable and extract its price
+    values.update({market[i] : balance[currencies.index(crypto_tmp)] * price[i]})
+    #We find the index of the crypto in crypto_tmp and extract its balance
     print(market[i], balance[currencies.index(crypto_tmp)], price[i])
 
     if(market[i][0]=='D'): fiat_tmp = 'Z'+market[i][4:7]    
