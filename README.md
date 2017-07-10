@@ -36,7 +36,7 @@ Program features
 
 NOTE: Fiat currencies like JPY doesn't have as many markets as USD on Krakenex.
 Crypto currencies that doesn't cover these markets, with JPY for example, aren't converted yet
-Only markets with JPY are counted in the total sum values
+Only markets with JPY are counted in the total sum value of JPY total
 This issue will be fixed with the next commit
 
 
@@ -63,3 +63,4 @@ TODO:
 1. Manage exceptions with crypto/fiat currencies pair markets that doesn't exist on Kraken
 2. Add e-mail sender with timer or interruptions to user (user will add its own e-mail to ensure privacy)
 3. Write a log file periodically
+4. Add a GUI
