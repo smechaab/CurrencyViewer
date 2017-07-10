@@ -10,11 +10,13 @@ Credits
 -------
 This code is based on Krakenex Python3 API by veox: https://github.com/veox/python3-krakenex
 
-* v0.1
+* v0.1.1
 
 This is a tiny program I personally use it daily.
 It allows me to check my currencies without logging every 10 minutes on Kraken website.
 This is also very useful for developers on the Krakenex API thanks to dynamically extracted data.
+
+Please note that you need to fill your kraken.key file with your API keys. You can easily generate a pair of keys on the Kraken website, see the API documentation : https://www.kraken.com/help/api 
 
 Program features
 ----------------
@@ -31,6 +33,11 @@ Program features
       Check k.query_public('Ticker',{'pair': 'YOURMARKET',}) inline to know if it exist.)
 	  
 5.    Working with multi-fiat currencies wallets.
+
+NOTE: Fiat currencies like JPY doesn't have as many markets as USD on Krakenex.
+Crypto currencies that doesn't cover these markets, with JPY for example, aren't converted yet
+Only markets with JPY are counted in the total sum values
+This issue will be fixed with the next commit
 
 
 Interesting variables
