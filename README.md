@@ -11,13 +11,18 @@ Credits
 -------
 This code is based on Krakenex Python3 API by veox: https://github.com/veox/python3-krakenex
 
-* v0.1.1
+* v0.1.2
 
 This is a tiny program I personally use it daily.
 It allows me to check my currencies without logging every 10 minutes on Kraken website.
 This is also very useful for developers on the Krakenex API thanks to dynamically extracted data.
 
 Please note that you need to fill your kraken.key file with your API keys. You can easily generate a pair of keys on the Kraken website, see the API documentation : https://www.kraken.com/help/api 
+
+v0.1.2 Changes
+----------------
+Fixing bugs, cleaning code and improving code efficiency in order to further evolutions
+Thanks to user plguhur for contribution
 
 Program features
 ----------------

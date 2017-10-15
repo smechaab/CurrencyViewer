@@ -12,9 +12,11 @@ Created on Wed Jun  7 19:21:28 2017
  If you have any questions or suggestions, please email me at 
  s.mechaab@gmail.com.
  
- Please, don't hesitate to feedback !
+ And please, don't hesitate to feedback !
  
-v0.1.1
+v0.1.2
+Fixing bugs and cleaning code
+
 1. Displays the different amount of crypto currencies you own on your Kraken wallet.
 2. Displays the total crypto money you own in equivalent fiat money.
 3. Adapted to the crypto and fiat currencies you already own.
@@ -29,6 +31,8 @@ Crypto currencies that doesn't cover these markets, with JPY for example, aren't
 Only markets with JPY are counted in the total sum values
 This issue will be fixed with the next commit
 
+NOTE2: Please be aware that only the markets with direct fiat conversion are covered yet
+
  
 """
 #%% Includes
@@ -38,7 +42,7 @@ import sys
 
 currencies = [] #List of differents currencies owned by user
 market = []     #List of markets concerned by currencies in user's wallet
-balance = []    #List of the differents amount of crypto currencies owned by client
+balance = []    #List of the differents amount of crypto currencies owned by user
 
 #%%Extracting data from Kraken Exchange API
 k = krakenex.API()
@@ -49,75 +53,63 @@ data = k.query_private('Balance')
 if data['error'] : 
     print("Error : ",data['error'])
     sys.exit("Can't continue with error")
-else : data = str(data['result'])
 
 #DEBUG
 #data = data.replace("XXRP","ZJPY")
-#data = data.replace("XZEC","ZUSD")
+#data['result']["ZUSD"] = data['result']["XZEC"]
+#del data['result']["XZEC"]
 #Can be used to test if others currencies (e.g ZPJY) are compatibles with others market pairs you are into. 
 
-#%%We find currencies concerned by the client wallet
+#%%We find currencies concerned by the user wallet
 
 #Exctracts crypto currencies
-crypto_index = [m.start() for m in re.finditer("'X", data)]
+crypto_index = [c for c in data['result'] if(not c.startswith("Z"))]
+#We get every symbols except the ones which starts with "Z" (these are fiat currencies)
 #print (crypto_index)
 if crypto_index == [] : sys.exit("Can't find any crypto currency on your wallet yet.")
 for i in crypto_index:
-    currencies.append(data[i+1:i+5])
+    currencies.append(i)
 
-#Extracts crypto currencies beginning with 'D' (they are two 4-letters long currencies today:\
-#DASH and DOGE)
-crypto_index_tmp = [m.start() for m in re.finditer("'D", data)]
-for i in range(len(crypto_index_tmp)):
-    crypto_index.append(crypto_index_tmp[i])
-#print (crypto_index)
-for i in crypto_index_tmp:
-    currencies.append(data[i+1:i+5])
-    
 #Extracts fiat currencies
-fiat_index = [m.start() for m in re.finditer("'Z", data)]
+fiat_index = [c for c in data['result'] if (c.startswith("Z"))]
 #print (fiat_index)
-
-for i in fiat_index:
-    currencies.append(data[i+1:i+5])
 if fiat_index == [] :
     print("Currencies will be converted in USD by default")
     fiat_index.append(0)
     currencies.append('ZUSD')
+else:
+    currencies = currencies + fiat_index
 
 print("Currencies on your wallet : ",currencies)
 
-#%%We prepare our list of markets exchange we are interested in
-for i in range(len(crypto_index)):
-    for j in range(len(fiat_index)):
-        if currencies[i][0]=='D':
-            market.append(currencies[i][0:4]+currencies[len(crypto_index)+j][1:4])
-        else :
-            market.append(currencies[i][1:4]+currencies[len(crypto_index)+j][1:4])
-        
-print("Markets we aim to analyze to : ",market) #This is optionnal
-#Add more currencies if needed but it's done automatically
-
 #%%Here we get our current currency situation
 #raw currency values to be extracted
+for i in crypto_index:
+    balance.append(data['result'][i])
 
-for i in range(len(crypto_index)):
-    balance.append(data[crypto_index[i]+9:crypto_index[i]+17])
-    
-if(fiat_index[0] != 0):
-    for i in range(len(fiat_index)):
-        balance.append(data[fiat_index[i]+9:fiat_index[i]+15])
-else:
-    balance.append('0')
+for i in fiat_index:
+    balance.append(data['result'][i])
 #We extract what we need
 
 #%% Converting balance to float (needed for operations)
-for i in range(len(currencies)): # +1 to count EUR in casting str->float
-    balance[i] = float(balance[i])
+balance = [float(i) for i in balance]
 print("Current balance you own : ",balance)
 #Casting current balance to float
 
-#%% Extracts price of every currencies client is involved onto
+#%%We prepare our list of markets exchange we are interested in
+print (crypto_index, fiat_index)
+crypto_index = [i[1:] if(i.startswith("X")) else i for i in crypto_index]
+fiat_index = [i[1:] if(i.startswith("Z")) else i for i in fiat_index]
+        #We remove the first char in purpose to get the correct acrynom for market ask \
+        #(e.g : XXBT -> XBT, ZEUR -> EUR)
+
+for i in crypto_index:
+    for j in fiat_index:
+        market.append(i+j)
+        
+print("Markets we aim to analyze to : ",market) #This is optionnal
+#Add more currencies if needed but it's done automatically
+#%% Extracts price of every currencies user is involved onto
 # Also removing markets which doesn't exist on Kraken
 price = []
 i=0
@@ -131,28 +123,32 @@ while i < len(market):  #We use a while loop because the for loop doesn't allow 
         if data_price['error'][0] == "EQuery:Invalid asset pair" or "EQuery:Unknown asset pair":
                 print("Check market list, ",market[i]," pair doesn't exist on kraken exchange. Erasing from market list.")
                 market.remove(market[i])
-                #We don't want to increment when we have a false pair      
+                #We don't want to increment when we have a false pair
+                #In a next version, we gonna jump to token/BTC then BTC/fiat \
+                #(e.g : EOS/BTC then BTC/USD to get an estimation of the token's value)
         else:
             # We leave the program if this is not an Invalid asset pair error
             sys.exit("Can't continue with error")
     else:
         #print(data_price)
         #We extract 
-        indx = str(data_price['result']).find('c')
-        price.append(str(data_price['result'])[indx+6:indx+15])
+        index=list(data_price['result'].keys())[0]
+        p = data_price['result'][index]['c'][0]
+        price.append(p)
         print("Price of ",market[i]," added")
         price[i] = float(price[i])
+        #(Thanks to plguhur)
         
         i+=1
         #price is a list of str -> cast to float
-#%% Finally multiplying balance of crypto of client wallet BY actual real-time price of market
+#%% Finally multiplying balance of crypto of user wallet BY actual real-time price of market
 # price of coin in FIAT * amount of coin = Estimated value of currencies in FIAT MONEY
 values = {}
 total = {}
 
 totals = []
 for i in fiat_index:
-    total.update({data[i+1:i+5] : ''})
+    total.update({i : ''})
     totals.append(0)
 #Initializing in case we never get the market data    
     
@@ -160,15 +156,21 @@ for i in fiat_index:
 #Converting data from each fiat to their corresponding market (ZEUR with XBTEUR, ETHEUR,... \
 # same for ZUSD and XBTUSD, ETHUSD, etc...) via string recognition
 for i in range(len(market)):
-    if(market[i][0]=='D'): crypto_tmp = market[i][0:4]
-    else: crypto_tmp = 'X'+market[i][0:3]
+    if(market[i][0:3] in currencies):
+        crypto_tmp = market[i][0:3]
+    elif(market[i][0:4] in currencies):
+        crypto_tmp = market[i][0:4]
+        
+    elif('X'+market[i][0:3] in currencies):
+        crypto_tmp = 'X'+market[i][0:3]
+
     
     values.update({market[i] : balance[currencies.index(crypto_tmp)] * price[i]})
     #We find the index of the crypto in crypto_tmp and extract its balance
     print(market[i], balance[currencies.index(crypto_tmp)], price[i])
 
-    if(market[i][0]=='D'): fiat_tmp = 'Z'+market[i][4:7]    
-    else: fiat_tmp = 'Z'+market[i][3:6]
+    if(market[i][0]=='D'): fiat_tmp = market[i][4:7]    
+    else: fiat_tmp = market[i][3:6]
 
     totals[list(total.keys()).index(fiat_tmp)] += values[market[i]]
     
