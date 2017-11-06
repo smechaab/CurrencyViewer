@@ -37,7 +37,7 @@ NOTE2: Please be aware that only the markets with direct fiat conversion are cov
 """
 #%% Includes
 import krakenex
-import re
+#import re
 import sys
 
 currencies = [] #List of differents currencies owned by user
