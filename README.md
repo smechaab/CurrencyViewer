@@ -11,7 +11,7 @@ Credits
 -------
 This code is based on Krakenex Python3 API by veox: https://github.com/veox/python3-krakenex
 
-* v0.1.2
+* v0.1.3
 
 This is a tiny program I personally use it daily.
 It allows me to check my currencies without logging every 10 minutes on Kraken website.
@@ -19,10 +19,15 @@ This is also very useful for developers on the Krakenex API thanks to dynamicall
 
 Please note that you need to fill your kraken.key file with your API keys. You can easily generate a pair of keys on the Kraken website, see the API documentation : https://www.kraken.com/help/api 
 
-v0.1.2 Changes
+v0.1.3 Changes
 ----------------
-Fixing bugs, cleaning code and improving code efficiency in order to further evolutions
-Thanks to user plguhur for contribution
+Adding CSV log writing feature.
+Next updates will provide more object-oriented code and may be more library-oriented.
+It is also planned to add other exchanges than Kraken.
+
+Your data logs are now stored by default in « data.csv » and is located in the same directory.
+
+Have a nice summer;)
 
 Program features
 ----------------
@@ -68,5 +73,5 @@ TODO:
 -----
 1. Manage exceptions with crypto/fiat currencies pair markets that doesn't exist on Kraken
 2. Add e-mail sender with timer or interruptions to user (user will add its own e-mail to ensure privacy)
-3. Write a log file periodically
+3. Add other exchanges
 4. Add a GUI

@@ -14,8 +14,8 @@ Created on Wed Jun  7 19:21:28 2017
  
  And please, don't hesitate to feedback !
  
-v0.1.2
-Fixing bugs and cleaning code
+v0.1.3
+Writelog feature added.
 
 1. Displays the different amount of crypto currencies you own on your Kraken wallet.
 2. Displays the total crypto money you own in equivalent fiat money.
@@ -25,6 +25,7 @@ Fixing bugs and cleaning code
 DASHUSD -> DASHJPY for example, can't be done because the market doesn't exist on Kraken.
 Check k.query_public('Ticker',{'pair': 'YOURMARKET',}) inline to know if it exist.
 5. Works with multi-fiat currencies wallets.
+6. Write and log data into "data.csv" located in the same folder directory
 
 NOTE: Fiat currencies like JPY doesn't have as many markets as USD on Krakenex.
 Crypto currencies that doesn't cover these markets, with JPY for example, aren't converted yet
@@ -37,14 +38,94 @@ NOTE2: Please be aware that only the markets with direct fiat conversion are cov
 """
 #%% Includes
 import krakenex
+import csv
 #import re
 import sys
+import os
 
 currencies = [] #List of differents currencies owned by user
 market = []     #List of markets concerned by currencies in user's wallet
 balance = []    #List of the differents amount of crypto currencies owned by user
 
+
+
+    #%% Log file writer
+def CreateLogFile(filename, assets, writeFiat):
+    log_file = open(filename, 'w', newline='') 
+    wr = csv.writer(log_file)
+    print ("Creating a log file ", filename)
+    header = []
+    #Generating the first row (columns titles)
+    header.append("Date")
+    
+    dict_assets = assets
+    
+    if(writeFiat==False):
+        for fiat in list(dict_assets['result']):
+            if(fiat.startswith("Z")):
+                dict_assets['result'].pop(fiat)
+        
+    header = header + list(dict_assets['result'].keys())
+    header.append("Total")
+    header.append("Var(%)")
+    header.append("Currency")
+    wr.writerow(header)
+    log_file.close()
+
+def WriteLog(data, filename="data.csv", writeFiat=False, currency="USD"):
+    assets = k.query_public('Assets')
+    if(os.path.exists(os.path.join(os.getcwd(),filename)) == False):
+        CreateLogFile(filename, assets, writeFiat)
+        var = 0 #Var (%) is set to 0 when creating file
+        
+    else: # If file already exists :
+        with open(filename,'r') as f:
+            for row in reversed(list(csv.reader(f))):
+                lastLine = row
+                break
+
+            if(lastLine[-1] == currency):
+                lastTotal = float(lastLine[-3])
+                var = float((abs(total[currency] - lastTotal)) / lastTotal)*100
+            else:
+                var = 0
+            
+            #We prepare the Var(%) by checking last Total value and currency
+        print ("Accumulating data...")
+        
+    if(writeFiat==False):
+        for fiat in list(assets['result']):
+            if(fiat.startswith("Z")):
+                assets['result'].pop(fiat)
+    #We remove the fiat currencies in header dynamically if the user still wants to not write it
+    #If one day or suddenly the user decides to add Fiat writing in data logs, it will try to adapt
+    
+    log_file = open(filename, "a", newline='')
+    wr = csv.writer(log_file)
+
+    row = []
+    tmp = k.query_public('Time')
+    row.append(tmp['result']['unixtime'])
+    tmp = list(data.items())
+    #row = csv.DictWriter(log_file, delimiter=',', lineterminator='\n', fieldnames=tmp)
+    
+    for asset in list(assets['result']):
+        if(str(assets['result'][asset]['altname'] + currency) in values.keys()):
+            assertValue = values[str(assets['result'][asset]['altname']) + currency]
+            row.append("{0:.5f}".format(assertValue))
+        else:
+            row.append("0")
+        
+    row.append("{0:.2f}".format(total[currency]))    
+    row.append("+{0:.2f}".format(var))
+    row.append(currency)
+    
+#    row.append()
+    wr.writerow(row)
+    log_file.close()
+
 #%%Extracting data from Kraken Exchange API
+
 k = krakenex.API()
 k.load_key('kraken.key')    
 data = k.query_private('Balance')
@@ -53,6 +134,7 @@ data = k.query_private('Balance')
 if data['error'] : 
     print("Error : ",data['error'])
     sys.exit("Can't continue with error")
+
 
 #DEBUG
 #data = data.replace("XXRP","ZJPY")
@@ -191,4 +273,4 @@ for i in range(len(fiat_index)):
 values.update({'Total' : total})
 print(values)
 
-        
+writelog(values, currency="EUR")

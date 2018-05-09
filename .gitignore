@@ -1,3 +1,7 @@
 # KEY files #
 #############
 *.key
+
+# LOG files #
+#############
+*.csv
