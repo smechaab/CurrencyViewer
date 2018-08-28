@@ -50,7 +50,7 @@ balance = []    #List of the differents amount of crypto currencies owned by use
 
 
     #%% Log file writer
-def CreateLogFile(filename, assets, writeFiat):
+def createLogFile(filename, assets, writeFiat):
     log_file = open(filename, 'w', newline='') 
     wr = csv.writer(log_file)
     print ("Creating a log file ", filename)
@@ -72,7 +72,7 @@ def CreateLogFile(filename, assets, writeFiat):
     wr.writerow(header)
     log_file.close()
 
-def WriteLog(data, filename="data.csv", writeFiat=False, currency="USD"):
+def writeLog(data, filename="data.csv", writeFiat=False, currency="USD"):
     assets = k.query_public('Assets')
     if(os.path.exists(os.path.join(os.getcwd(),filename)) == False):
         CreateLogFile(filename, assets, writeFiat)
@@ -86,7 +86,7 @@ def WriteLog(data, filename="data.csv", writeFiat=False, currency="USD"):
 
             if(lastLine[-1] == currency):
                 lastTotal = float(lastLine[-3])
-                var = float((abs(total[currency] - lastTotal)) / lastTotal)*100
+                var = float((total[currency] - lastTotal) / lastTotal)*100
             else:
                 var = 0
             
@@ -117,10 +117,9 @@ def WriteLog(data, filename="data.csv", writeFiat=False, currency="USD"):
             row.append("0")
         
     row.append("{0:.2f}".format(total[currency]))    
-    row.append("+{0:.2f}".format(var))
+    row.append("{0:.2f}".format(var))
     row.append(currency)
-    
-#    row.append()
+
     wr.writerow(row)
     log_file.close()
 
@@ -273,4 +272,4 @@ for i in range(len(fiat_index)):
 values.update({'Total' : total})
 print(values)
 
-writelog(values, currency="EUR")
+writeLog(values, currency="EUR")
