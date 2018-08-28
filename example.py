@@ -2,7 +2,7 @@
 """
 Created on Fri Nov 17 20:11:34 2017
 
-@author: Infras
+@author: smechaab
 """
 import CurrencyViewer as cv
 
