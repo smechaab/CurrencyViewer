@@ -64,14 +64,14 @@ class CurrencyViewer:
         
 #%% Main purpose of this script
 # It calls every function in order, it allows to get the full data for user
-    def processCViewer(self,log=True):
+    def processCViewer(self,log=True, currency = "USD"):
         
         data, c, f = self.collectData()
         price = self.getMarketPrice(data,c)
         self.processingConversion(price,c,f)
 #a        self.displayResults(f)
         if(log==True):
-            self.writeLog(self.values, currency = "EUR")
+            self.writeLog(self.values, currency = currency)
         
 #%% Exit error handling function
     def _exitError(self):
@@ -330,7 +330,6 @@ class CurrencyViewer:
         #row = csv.DictWriter(log_file, delimiter=',', lineterminator='\n', fieldnames=tmp)
         
         for asset in list(assets['result']):
-            print(str(str(assets['result'][asset]['altname']))) #debug
             if(str(assets['result'][asset]['altname'] + "XBT") in self.values.keys()):
                 assertValue = self.values[str(assets['result'][asset]['altname']) + "XBT"] * float(self.fiatbtc_pair[currency])
                 row.append("{0:.5f}".format(assertValue))
