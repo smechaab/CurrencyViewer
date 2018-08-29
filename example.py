@@ -8,4 +8,3 @@ import CurrencyViewer as cv
 
 a = cv.CurrencyViewer()
 a.processCViewer(log=True, currency="EUR", time="rfc1123") #time format: unixtime or rfc1123
-

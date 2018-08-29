@@ -51,7 +51,7 @@ class CurrencyViewer:
         self.market = []     #List of markets concerned by currencies in user's wallet
         self.balance = []    #List of the differents amount of crypto currencies owned by user
         
-        self.debugmode = True #Change to switch to debugmode 
+        self.debugmode = False #Change to switch to debugmode 
         
 #%% Main purpose of this script
 # It calls every function in order, it allows to get the full data for user
