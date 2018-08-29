@@ -50,28 +50,19 @@ class CurrencyViewer:
         self.currencies = [] #List of differents currencies owned by user
         self.market = []     #List of markets concerned by currencies in user's wallet
         self.balance = []    #List of the differents amount of crypto currencies owned by user
-    
-        #Header generation for data logfile
-#        self.header = []
-#        self.header.append("Date")
-#        assets = self.k.query_public('Assets')
-#        #Generating the first row (columns titles)
-#        self.header = self.header + list(assets['result'].keys())
-#        self.header.append("Total")
-#        self.header.append("Var(%)")
         
-        self.debugmode = False #Change to switch to debugmode 
+        self.debugmode = True #Change to switch to debugmode 
         
 #%% Main purpose of this script
 # It calls every function in order, it allows to get the full data for user
-    def processCViewer(self,log=True, currency = "USD"):
+    def processCViewer(self,log=True, currency = "USD", time="rfc1123"):
         
         data, c, f = self.collectData()
-        price = self.getMarketPrice(data,c)
+        price = self.getMarketPrice(c)
         self.processingConversion(price,c,f)
-#a        self.displayResults(f)
+        self.displayResults()
         if(log==True):
-            self.writeLog(self.values, currency = currency)
+            self.writeLog(self.values, currency = currency, time = time)
         
 #%% Exit error handling function
     def _exitError(self):
@@ -102,7 +93,6 @@ class CurrencyViewer:
         
         #Extracts fiat currencies
         fiat_index = [c for c in data['result'] if (c.startswith("Z"))]
-        #print (fiat_index)
         if fiat_index == [] :
             print("Currencies will be converted in USD by default")
             fiat_index.append(0)
@@ -150,13 +140,11 @@ class CurrencyViewer:
                 # We leave the program if this is not an Invalid asset pair error
                 sys.exit("Can't continue with error")
         else:
-            #print(data_price)
-            #We extract 
             index=list(data_price['result'].keys())[0]
         return data_price['result'][index]['c'][0]
 
 #%%
-    def getMarketPrice(self, data, crypto_index):
+    def getMarketPrice(self, crypto_index):
         #We prepare our list of markets exchange we are interested in
         
         for i in crypto_index:
@@ -191,15 +179,12 @@ class CurrencyViewer:
                     # We leave the program if this is not an Invalid asset pair error
                     sys.exit("Can't continue with error")
             else:
-                #print(data_price)
-                #We extract 
                 index=list(data_price['result'].keys())[0]
                 p = data_price['result'][index]['c'][0]
                 price.append(p)
                 print("Price of ",self.market[i]," added")
                 price[i] = float(price[i])
                 #(Thanks to plguhur)
-                
                 i+=1
                 #price is a list of str -> cast to float
         return price
@@ -262,11 +247,13 @@ class CurrencyViewer:
 #            self.totals.append(data_price)#debug
         
 #%% Displaying
-    def displayResults(self, fiat_index):
-        for i in range(len(fiat_index)):
-            self.total.update({list(self.total.keys())[i] : self.totals[i]})      
-        self.values.update({'Total' : self.total})
+    def displayResults(self):
         print(self.values)
+        print(self.total)
+#        for i in range(len(fiat_index)):
+#            self.total.update({list(self.total.keys())[i] : self.totals[i]})      
+#        self.values.update({'Total' : self.total})
+#        print(self.values)
 
     #%% Log file writer
     def createLogFile(self, filename, assets, writeFiat):
@@ -292,7 +279,7 @@ class CurrencyViewer:
         log_file.close()
         
     #%% writing log
-    def writeLog(self, data, filename="data.csv", writeFiat=False, currency="USD"):
+    def writeLog(self, data, filename="data.csv", writeFiat=False, currency="USD", time='rfc1123'):
         assets = self.k.query_public('Assets')
         if(os.path.exists(os.path.join(os.getcwd(),filename)) == False):
             self.createLogFile(filename, assets, writeFiat)
@@ -325,9 +312,8 @@ class CurrencyViewer:
     
         row = []
         tmp = self.k.query_public('Time')
-        row.append(tmp['result']['unixtime'])
+        row.append(tmp['result'][time])
         tmp = list(data.items())
-        #row = csv.DictWriter(log_file, delimiter=',', lineterminator='\n', fieldnames=tmp)
         
         for asset in list(assets['result']):
             if(str(assets['result'][asset]['altname'] + "XBT") in self.values.keys()):
@@ -342,86 +328,3 @@ class CurrencyViewer:
     
         wr.writerow(row)
         log_file.close()
-        
-    
-    
-#    def writeLog(self, data, filename="data.csv", writeFiat=False, currency="USD"):
-#        assets = self.k.query_public('Assets')
-#        if(os.path.exists(os.path.join(os.getcwd(),filename)) == False):
-#            self.createLogFile(filename, assets, writeFiat)
-#            var = 0 #Var (%) is set to 0 when creating file
-#            
-#        else: # If file already exists :
-#            with open(filename,'r') as f:
-#                for row in reversed(list(csv.reader(f))):
-#                    lastLine = row
-#                    break
-#    
-#                if(lastLine[-1] == currency and float(lastLine[-3]) != 0):
-#                    lastTotal = float(lastLine[-3])
-#                    var = float((abs(self.total[currency] - lastTotal)) / lastTotal)*100
-#                else:
-#                    var = 0
-#                
-#                #We prepare the Var(%) by checking last Total value and currency
-#            print ("Accumulating data...")
-#            
-#        if(writeFiat==False):
-#            for fiat in list(assets['result']):
-#                if(fiat.startswith("Z")):
-#                    assets['result'].pop(fiat)
-#        #We remove the fiat currencies in header dynamically if the user still wants to not write it
-#        #If one day or suddenly the user decides to add Fiat writing in data logs, it will try to adapt
-#        
-#        log_file = open(filename, "a", newline='')
-#        wr = csv.writer(log_file)
-#    
-#        row = []
-#        tmp = self.k.query_public('Time')
-#        row.append(tmp['result']['unixtime'])
-#        tmp = list(data.items())
-#        #row = csv.DictWriter(log_file, delimiter=',', lineterminator='\n', fieldnames=tmp)
-#        
-#        for asset in list(assets['result']):
-#            if(str(assets['result'][asset]['altname'] + currency) in self.values.keys()):
-#                assertValue = self.values[str(assets['result'][asset]['altname']) + currency]
-#                row.append("{0:.5f}".format(assertValue))
-#            else:
-#                row.append("0")
-#            
-#        row.append("{0:.2f}".format(self.total[currency]))    
-#        row.append("+{0:.2f}".format(var))
-#        row.append(currency)
-#    
-#        wr.writerow(row)
-#        log_file.close()
-    
-#    def writelog(self,data):
-#        if(os.path.exists(os.path.join(os.getcwd(),"data.csv")) == False):
-#            log_file = open("data.csv", 'w') 
-#            wr = csv.writer(log_file)
-#            print ("Creating a log file \"data.csv\"")
-#    #        header = []
-#    #        #Generating the first row (columns titles)
-#    #        header.append("Date")
-#    #        assets = k.query_public('Assets')
-#    #        header = header + list(assets['result'].keys())
-#    #        header.append("Total")
-#    #        header.append("Var(%)")
-#            wr.writerow(self.header)
-#        else:
-#            log_file = open("data.csv")
-#            rd = csv.reader(log_file)
-#            self.header = rd[0]
-#            wr = csv.writer(log_file)
-#            print ("Accumulating data...")
-#            
-#        row = []
-#        tmp = self.k.query_public('Time')
-#        row.append(tmp['result']['unixtime'])
-#        tmp = list(data.items())
-#        #row = csv.DictWriter(log_file, delimiter=',', lineterminator='\n', fieldnames=tmp)
-#        row.append()
-#        wr.writerow(row)
-#        log_file.close()
-#
