@@ -5,6 +5,7 @@ This is a short python3 program that dynamically displays and converts the crypt
 If this script helped you or if you have any feedback, please don't hesitate to contact me. 
 
 Author : smechaab
+
 Contact : s.mechaab@protonmail.com
 
 Credits 
