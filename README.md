@@ -2,16 +2,16 @@ krakenex-CurrencyViewer
 ======================= 
 This is a short python3 program that dynamically displays and converts the cryptocurrencies in your Kraken wallet into equivalents fiat money. 
 
-
 If this script helped you or if you have any feedback, please don't hesitate to contact me. 
 
-Author : smechaab 
+Author : smechaab
+Contact : s.mechaab@protonmail.com
 
 Credits 
 ------- 
 This code is based on Krakenex Python3 API by veox: https://github.com/veox/python3-krakenex 
 
-* v0.2.0
+* v0.2.1
 
 This is a tiny program I personally use it daily. 
 It allows me to check my currencies without logging every 10 minutes on Kraken website. 
@@ -19,15 +19,15 @@ This is also very useful for developers on the Krakenex API thanks to dynamicall
 
 Please note that you need to fill your kraken.key file with your API keys. You can easily generate a pair of keys on the Kraken website, see the API documentation : https://www.kraken.com/help/api  
 
-v0.2.0 Changes 
+v0.2.1 Changes 
 ---------------- 
-Adding CSV log writing feature. 
-Providing more object-oriented code and more library-oriented.
+Adding CSV log writing feature. Your data are now stored in data.csv by default which is located in the same directory. 
+Providing more object-oriented code, thus more library-oriented.
 
 TODO :
 It is also planned to add other exchanges than Kraken. 
 
-Your data logs are now stored by default in data.csv and is located in the same directory. 
+
 
 I wish you a good ‘back-to-school’ !
 
@@ -49,6 +49,47 @@ Program features
 NOTE: Some bugs need to be fixed with fiat currencies other than EUR or USD,
 it will be patched in the next one.
 
+Example
+-------
+
+See `example.py`
+```
+import CurrencyViewer as cv
+
+a = cv.CurrencyViewer()
+a.processCViewer(log=True, currency="USD", time="rfc1123")
+```
+
+This is aimed to be very easy to use.
+
+It is also possible to call some intermediate functions :
+
+* ```processCViewer(self, log=True, currency="USD", time="rfc1123")```:
+Main function to call, implies to call : collectData(), getMarketPrice(), processingConversion(), displayResults() and writeLog().
+Returns nothing
+
+
+* ```collectData(self)```:
+Uses krakenex library get data from Kraken API in Json.
+Returns raw data, list of crypto in user's wallet, list of fiat in user's wallet
+
+
+* ```getXBTtoFiatPrice(self, fiat)```:
+Return XBT price for "fiat" input currency
+
+
+* ```getMarketPrice(self, crypto_index)```:
+Returns crypto price in XBT
+
+
+* ```updateFiatInTotal(self, fiat)```:
+Updates "total" dict table to add { Fiat_currency : Total_Wallet_Value }.
+Returns nothing
+
+
+* ```displayResults(self)```:
+	* ``values`` (dict), total value of all crypto in XBT
+	* ``total`` (dict), total value in fiat currencies
 
 
 Interesting variables 

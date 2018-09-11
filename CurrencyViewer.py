@@ -14,7 +14,7 @@ Created on Wed Jun  7 19:21:28 2017
  
  And please, don't hesitate to feedback !
  
-v0.2.0
+v0.2.1
 Extracts data and store them in "data.csv"
 
 1. Displays the different amount of crypto currencies you own on your Kraken wallet.
@@ -49,7 +49,7 @@ class CurrencyViewer:
         
 #%% Main purpose of this script
 # It calls every function in order, it allows to get the full data for user
-    def processCViewer(self,log=True, currency = "USD", time="rfc1123"):
+    def processCViewer(self, log=True, currency="USD", time="rfc1123"):
         
         data, c, f = self.collectData()
         price = self.getMarketPrice(c)
@@ -117,9 +117,8 @@ class CurrencyViewer:
         #(e.g : XXBT -> XBT, ZEUR -> EUR)
         return data, crypto_index, fiat_index
 
-    #%% Get XBT to FIAT price
+#%% Get XBT to FIAT price
     def getXBTtoFiatPrice(self, fiat):
-        #We prepare our list of markets exchange we are interested in
         data_price = self.k.query_public('Ticker',{'pair': "XBT"+fiat,})
         print("XBT"+fiat)
         #Error ?
@@ -137,7 +136,7 @@ class CurrencyViewer:
             index=list(data_price['result'].keys())[0]
         return data_price['result'][index]['c'][0]
 
-#%%
+#%% getMarketPrice
     def getMarketPrice(self, crypto_index):
         #We prepare our list of markets exchange we are interested in
         
@@ -178,16 +177,21 @@ class CurrencyViewer:
                 #price is a list of str -> cast to float
         return price
                 
+#%% updateFiatInTotal
+    def updateFiatInTotal(self, fiat):
+        xbtfiat = self.getXBTtoFiatPrice(fiat)
+        self.fiatbtc_pair.update({fiat: xbtfiat})
+        self.total[fiat] = self.btc_total * float(xbtfiat)
 
-#%%
+#%% processingConversion
     def processingConversion(self, price, crypto_index, fiat_index):
         #Finally multiplying balance of crypto of user wallet BY actual real-time price of market
         # price of coin in FIAT * amount of coin = Estimated value of currencies in FIAT MONEY
         self.values = {}
         self.total = {}
         self.fiatbtc_pair = {}
-        
-        btc_total = 0
+
+        self.btc_total = 0
         self.totals = []
         for i in fiat_index:
             self.total.update({i : ''})
@@ -208,39 +212,26 @@ class CurrencyViewer:
                 crypto_tmp = 'X'+self.market[i][0:3]
         
             self.values.update({self.market[i] : self.balance[self.currencies.index(crypto_tmp)] * price[i]})
-            #We find the index of the crypto in crypto_tmp and extract its balance
             print(self.market[i], self.balance[self.currencies.index(crypto_tmp)], price[i])
             
             if(self.market[i][0]=='D'): fiat_tmp = self.market[i][4:7]    
             else: fiat_tmp = self.market[i][3:6]
             
-            btc_total += self.values[self.market[i]]
-            print("btc_total =",btc_total)
+            self.btc_total += self.values[self.market[i]]
+            print("btc_total =",self.btc_total)
             
         for i in fiat_index:
-            xbtfiat = self.getXBTtoFiatPrice(i)
-            self.fiatbtc_pair.update({i : xbtfiat})
-            self.total[i] = btc_total * float(xbtfiat)
-
+            self.updateFiatInTotal(i)
             
         for n in range(len(fiat_index)):
             self.values.update({self.currencies[len(crypto_index)+n] : self.balance[len(crypto_index)+n]})
-        #For each market, we calculate the price for each fiat money involved in
-        #One exception : when i-n < 0, we need to fix balance index because 
-        #len(price) and len(market) is not equal to len(balance)        
-            
-            #self.totals[n] += self.balance[len(crypto_index)+n]
-            
-#        for f_curr in fiat_index:
-#            data_price = self.k.query_public('Ticker',{'pair': "XBT"+f_curr,})
-#            self.totals.append(data_price)#debug
         
 #%% Displaying
     def displayResults(self):
         print(self.values)
         print(self.total)
 
-    #%% Log file writer
+#%% Log file writer
     def createLogFile(self, filename, assets, writeFiat):
         log_file = open(filename, 'w', newline='') 
         wr = csv.writer(log_file)
@@ -263,7 +254,7 @@ class CurrencyViewer:
         wr.writerow(header)
         log_file.close()
         
-    #%% writing log
+#%% writing log
     def writeLog(self, data, filename="data.csv", writeFiat=False, currency="USD", time='rfc1123'):
         assets = self.k.query_public('Assets')
         if(os.path.exists(os.path.join(os.getcwd(),filename)) == False):
@@ -275,7 +266,10 @@ class CurrencyViewer:
                 for row in reversed(list(csv.reader(f))):
                     lastLine = row
                     break
-    
+
+                if currency not in self.total: self.updateFiatInTotal(currency)
+                #If user wants a fiat conversion not in his kraken wallet
+
                 if(lastLine[-1] == currency):
                     lastTotal = float(lastLine[-3])
                     var = float((self.total[currency] - lastTotal) / lastTotal)*100
@@ -306,7 +300,7 @@ class CurrencyViewer:
                 row.append("{0:.5f}".format(assertValue))
             else:
                 row.append("0")
-            
+
         row.append("{0:.2f}".format(self.total[currency]))  
         row.append("{0:.2f}".format(var))
         row.append(currency)
