@@ -7,4 +7,4 @@ Created on Fri Nov 17 20:11:34 2017
 import CurrencyViewer as cv
 
 a = cv.CurrencyViewer()
-a.processCViewer(log=True, currency="EUR", time="rfc1123") #time format: unixtime or rfc1123
+a.processCViewer(log=True, currency="USD", time="rfc1123") #time format: unixtime or rfc1123

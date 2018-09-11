@@ -10,35 +10,29 @@ Created on Wed Jun  7 19:21:28 2017
  Please fill and copy your kraken.key file in the same directory.
  
  If you have any questions or suggestions, please email me at 
- s.mechaab@gmail.com.
+ s.mechaab@protonmail.com.
  
  And please, don't hesitate to feedback !
  
-v0.1.2
-Fixing bugs and cleaning code
+v0.2.0
+Extracts data and store them in "data.csv"
 
 1. Displays the different amount of crypto currencies you own on your Kraken wallet.
 2. Displays the total crypto money you own in equivalent fiat money.
 3. Adapted to the crypto and fiat currencies you already own.
 4. If you don't own any fiat money on your Kraken wallet, it will be displayed the equivalent in USD.
-(The fiat money can be easily modified but be aware that some markets doesn't allow it,
-DASHUSD -> DASHJPY for example, can't be done because the market doesn't exist on Kraken.
-Check k.query_public('Ticker',{'pair': 'YOURMARKET',}) inline to know if it exist.
 5. Works with multi-fiat currencies wallets.
+6. Writes data in a csv file located in the project folder (default : data.csv).
 
-NOTE: Fiat currencies like JPY doesn't have as many markets as USD on Krakenex.
-Crypto currencies that doesn't cover these markets, with JPY for example, aren't converted yet
-Only markets with JPY are counted in the total sum values
-This issue will be fixed with the next commit
+NOTE: Some bugs need to be fixed with fiat currencies other than EUR or USD,
+it will be patched in the next one.
 
-NOTE2: Please be aware that only the markets with direct fiat conversion are covered yet
 
  
 """
 #%% Includes
 import krakenex
 import csv
-#import re
 import sys
 import os
 
@@ -152,10 +146,8 @@ class CurrencyViewer:
                 self.market.append(i+"XBT")
                 
         print("Markets concerned : ",self.market) #This is optionnal
-        #Add more currencies if needed but it's done automatically
         
         #Extracts price of every currencies user is involved onto
-        # Also removing markets which doesn't exist on Kraken
         
         price = []
         i=0
@@ -171,10 +163,7 @@ class CurrencyViewer:
                         #So we get the currency on BTC market and we will convert it later
                         self.market.append(self.market[i].replace("EUR","XBT"))
                         self.market.remove(self.market[i])
-                        
-                        #We don't want to increment when we have a false pair
-                        #In a next version, we gonna jump to token/BTC then BTC/fiat \
-                        #(e.g : EOS/BTC then BTC/USD to get an estimation of the token's value)
+
                 else:
                     # We leave the program if this is not an Invalid asset pair error
                     sys.exit("Can't continue with error")
@@ -250,10 +239,6 @@ class CurrencyViewer:
     def displayResults(self):
         print(self.values)
         print(self.total)
-#        for i in range(len(fiat_index)):
-#            self.total.update({list(self.total.keys())[i] : self.totals[i]})      
-#        self.values.update({'Total' : self.total})
-#        print(self.values)
 
     #%% Log file writer
     def createLogFile(self, filename, assets, writeFiat):
