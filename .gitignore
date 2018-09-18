@@ -5,3 +5,7 @@
 # LOG files #
 #############
 *.csv
+
+# PYC files #
+#############
+*.pyc
