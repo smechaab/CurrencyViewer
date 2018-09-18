@@ -1,4 +1,4 @@
-
+Currency Viewer
 ===============
 This is a short python3 program that dynamically displays and converts the cryptocurrencies in your Kraken wallet into equivalents fiat money. 
 
@@ -113,7 +113,4 @@ TODO:
 ----- 
 1. Add orders actions
 2. Add other exchanges 
-<<<<<<< Updated upstream
 3. Add a GUI 
-=======
->>>>>>> Stashed changes
