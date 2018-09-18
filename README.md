@@ -45,16 +45,12 @@ it will be patched in the next one.
 
 Installation
 ------------
-This package requires Python 3.3 or later, and needs `krakenex`_ library.
+This package requires Python 3.3 or later, and needs [krakenex](https://github.com/veox/python3-krakenex) library.
 
-You can find a `PyPI package`_ available.
+You can find a [PyPI package](https://pypi.org/project/currency-viewer/) available.
 
-.. _krakenex: https://github.com/veox/python3-krakenex
-.. _PyPI package: https://pypi.org/project/currency-viewer/
+**Using pip:**
 
-Using pip:
-^^^^^^^^^^
-.. code-block:: sh
 	pip install currency-viewer
 
 Example
