@@ -59,9 +59,9 @@ You can find a [PyPI package](https://pypi.org/project/currency-viewer/) availab
 Example
 -------
 
-See `example.py`
+See `basic_example.py`
 ```
-import CurrencyViewer as cv
+from currency_viewer import currency_viewer as cv
 
 a = cv.CurrencyViewer()
 a.processCViewer(log=True, currency="USD", time="rfc1123")
