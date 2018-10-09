@@ -37,6 +37,8 @@ import sys
 import os
 
 #%% Class init
+
+
 class CurrencyViewer:
     def __init__(self):
         self.k = krakenex.API()
@@ -44,7 +46,14 @@ class CurrencyViewer:
         self.currencies = [] #List of differents currencies owned by user
         self.market = []     #List of markets concerned by currencies in user's wallet
         self.balance = []    #List of the differents amount of crypto currencies owned by user
-        
+
+        self.values = {} #Context variables
+        self.total = {}
+        self.fiatbtc_pair = {}
+
+        self.btc_total = 0
+        self.totals = []
+
         self.debugmode = False #Change to switch to debugmode 
         
 #%% Main purpose of this script
@@ -53,7 +62,7 @@ class CurrencyViewer:
         
         data, c, f = self.collectData()
         price = self.getMarketPrice(c)
-        self.processingConversion(price,c,f)
+        self.processingConversion(price, c, f)
         self.displayResults()
         if(log==True):
             self.writeLog(self.values, currency = currency, time = time)
@@ -111,10 +120,6 @@ class CurrencyViewer:
         #Casting current balance to float
         
         print (crypto_index, fiat_index)
-        crypto_index = [i[1:] if(i.startswith("X")) else i for i in crypto_index]
-        fiat_index = [i[1:] if(i.startswith("Z")) else i for i in fiat_index]
-        #We remove the first char in purpose to get the correct acrynom for market ask \
-        #(e.g : XXBT -> XBT, ZEUR -> EUR)
         return data, crypto_index, fiat_index
 
 #%% Get XBT to FIAT price
@@ -139,10 +144,17 @@ class CurrencyViewer:
 #%% getMarketPrice
     def getMarketPrice(self, crypto_index):
         #We prepare our list of markets exchange we are interested in
-        
-        for i in crypto_index:
-            if(i != "XBT"):
-                self.market.append(i+"XBT")
+
+        if type(crypto_index) == list:
+            crypto_index = [i[1:] if (i.startswith("X")) else i for i in crypto_index]
+            # We remove the first char in purpose to get the correct acrynom for market ask \
+            # (e.g : XXBT -> XBT, ZEUR -> EUR)
+            for i in crypto_index:
+                if i != "XBT":
+                    self.market.append(i+"XBT")
+        else:
+            if crypto_index != "XBT":
+                self.market.append(crypto_index+'XBT')
                 
         print("Markets concerned : ",self.market) #This is optionnal
         
@@ -179,20 +191,18 @@ class CurrencyViewer:
                 
 #%% updateFiatInTotal
     def updateFiatInTotal(self, fiat):
-        xbtfiat = self.getXBTtoFiatPrice(fiat)
-        self.fiatbtc_pair.update({fiat: xbtfiat})
-        self.total[fiat] = self.btc_total * float(xbtfiat)
+        xbt_fiat = self.getXBTtoFiatPrice(fiat)
+        self.fiatbtc_pair.update({fiat: xbt_fiat})
+        self.total[fiat] = self.btc_total * float(xbt_fiat)
 
 #%% processingConversion
     def processingConversion(self, price, crypto_index, fiat_index):
         #Finally multiplying balance of crypto of user wallet BY actual real-time price of market
         # price of coin in FIAT * amount of coin = Estimated value of currencies in FIAT MONEY
-        self.values = {}
-        self.total = {}
-        self.fiatbtc_pair = {}
 
-        self.btc_total = 0
-        self.totals = []
+        crypto_index = [i[1:] if(i.startswith("X")) else i for i in crypto_index]
+        fiat_index = [i[1:] if(i.startswith("Z")) else i for i in fiat_index]
+
         for i in fiat_index:
             self.total.update({i : ''})
             self.totals.append(0)
