@@ -1,12 +1,15 @@
 Currency Viewer
 ===============
-This is a short python3 program that dynamically displays and converts the cryptocurrencies in your Kraken wallet into equivalents fiat money. 
+This is a short python3 framework that dynamically displays and converts the cryptocurrencies in your Kraken wallet into equivalents fiat money. Variables and functions may help developpers to easily extract data from Kraken and process value conversions.
+It's also possible to store data in a csv file.
+Next feature will add high-level orders functions.
 
-If this script helped you or if you have any feedback, please don't hesitate to contact me. 
+Any contribution in any way is welcome. Feel free to contribute to this project!
 
 Author : smechaab
 
 Contact : s.mechaab@protonmail.com
+If this script helped you or if you have any feedback, please don't hesitate to contact me.
 
 Credits 
 ------- 
@@ -56,9 +59,9 @@ You can find a [PyPI package](https://pypi.org/project/currency-viewer/) availab
 Example
 -------
 
-See `example.py`
+See `basic_example.py`
 ```
-import CurrencyViewer as cv
+from currency_viewer import currency_viewer as cv
 
 a = cv.CurrencyViewer()
 a.processCViewer(log=True, currency="USD", time="rfc1123")

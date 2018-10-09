@@ -40,6 +40,7 @@ import os
 
 
 class CurrencyViewer:
+    DELTA = 0.0000001
     def __init__(self):
         self.k = krakenex.API()
         self.k.load_key('kraken.key')
@@ -280,11 +281,10 @@ class CurrencyViewer:
                 if currency not in self.total: self.updateFiatInTotal(currency)
                 #If user wants a fiat conversion not in his kraken wallet
 
-                if(lastLine[-1] == currency):
-                    lastTotal = float(lastLine[-3])
+                var = 0
+                lastTotal = float(lastLine[-3])
+                if lastLine[-1] == currency and lastTotal > self.DELTA:
                     var = float((self.total[currency] - lastTotal) / lastTotal)*100
-                else:
-                    var = 0
                 
                 #We prepare the Var(%) by checking last Total value and currency
             print ("Accumulating data...")
