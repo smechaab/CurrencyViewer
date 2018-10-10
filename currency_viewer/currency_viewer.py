@@ -44,9 +44,9 @@ class CurrencyViewer:
     def __init__(self):
         self.k = krakenex.API()
         self.k.load_key('kraken.key')
-        self.currencies = [] #List of differents currencies owned by user
+        self.currencies = {'fiat': [], 'crypto': []} #List of differents currencies owned by user
         self.market = []     #List of markets concerned by currencies in user's wallet
-        self.balance = []    #List of the differents amount of crypto currencies owned by user
+        self.balance = {'fiat': [], 'crypto': []}
 
         self.values = {} #Context variables
         self.total = {}
@@ -54,16 +54,18 @@ class CurrencyViewer:
 
         self.btc_total = 0
         self.totals = []
+        self.report_currency = "USD"
 
         self.debugmode = False #Change to switch to debugmode 
         
 #%% Main purpose of this script
 # It calls every function in order, it allows to get the full data for user
     def processCViewer(self, log=True, currency="USD", time="rfc1123"):
-        
-        data, c, f = self.collectData()
-        price = self.getMarketPrice(c)
-        self.processingConversion(price, c, f)
+        self.report_currency = "USD"
+        balance_result = self.request_balance()
+        self.extract_balances(balance_result)
+        price = self.getMarketPrice(self.currencies['crypto'])
+        self.processingConversion(price, self.currencies['crypto'], self.currencies['fiat'])
         self.displayResults()
         if(log==True):
             self.writeLog(self.values, currency = currency, time = time)
@@ -73,55 +75,53 @@ class CurrencyViewer:
         sys.exit("Can't continue with error")
 
 #%% Collecting data
-    def collectData(self):
-        data = self.k.query_private('Balance')
-        if (data['error']) : 
-                print("Error : ",data['error'])
+    def request_balance(self):
+        raw_balance_result = self.k.query_private('Balance')
+
+        if (raw_balance_result['error']) : 
+                print("Error : ", raw_balance_result['error'])
                 self._exitError()
                 
         #We find currencies concerned by the user wallet
         if (self.debugmode == True):
             #DEBUG, examples
-            data['result']["ZUSD"] = data['result']["XZEC"]
-            del data['result']["XZEC"]
-            #Can be used to test if others currencies (e.g ZPJY) are compatibles with others market pairs you are into. 
+            raw_balance_result['result']["ZUSD"] = raw_balance_result['result']["XZEC"]
+            del raw_balance_result['result']["XZEC"]
+            #Can be used to test if others currencies (e.g ZPJY) are compatibles with others market pairs you are into.
         
-        
-        #Exctracts crypto currencies
-        crypto_index = [c for c in data['result'] if(not c.startswith("Z"))]
+        return raw_balance_result['result']
+
+    def extract_fiat_balance(self, balance_result):
+        #Extract fiat currencies
+        print("Balance result: ", balance_result)
+        fiat_index = [c for c in balance_result if (c.startswith("Z"))]
+        if self.report_currency not in fiat_index:
+            print("Currencies will be converted in report currency by default")
+            self.currencies['fiat'].append("Z" + self.report_currency)
+            self.balance['fiat'].append(0.0)
+        else:           
+            for i in fiat_index:                
+                self.currencies['fiat'].append(i)
+                self.balance['fiat'].append(float(balance_result[i]))
+
+    def extract_crypto_balance(self, balance_result):
+        #Extract crypto currencies
+        crypto_index = [c for c in balance_result if(not c.startswith("Z"))]
         #We get every symbols except the ones which starts with "Z" (these are fiat currencies)
         #print (crypto_index)
         if crypto_index == [] : sys.exit("Can't find any crypto currency on your wallet yet.")
+        
         for i in crypto_index:
-            self.currencies.append(i)
-        
-        #Extracts fiat currencies
-        fiat_index = [c for c in data['result'] if (c.startswith("Z"))]
-        if fiat_index == [] :
-            print("Currencies will be converted in USD by default")
-            fiat_index.append(0)
-            self.currencies.append('ZUSD')
-        else:
-            self.currencies = self.currencies + fiat_index
-        
-        print("Currencies on your wallet : ",self.currencies)
+            self.currencies['crypto'].append(i)
+            self.balance['crypto'].append(float(balance_result[i]))           
 
-        #Here we get our current currency situation
-        #raw currency values to be extracted
-        for i in crypto_index:
-            self.balance.append(data['result'][i])
+    def extract_balances(self, balance_result):
         
-        for i in fiat_index:
-            self.balance.append(data['result'][i])
-        #We extract what we need
-
-        #Converting balance to float (needed for operations)
-        self.balance = [float(i) for i in self.balance]
-        print("Current balance you own : ",self.balance)
-        #Casting current balance to float
+        self.extract_fiat_balance(balance_result)
+        self.extract_crypto_balance(balance_result)        
         
-        print (crypto_index, fiat_index)
-        return data, crypto_index, fiat_index
+        print("Currencies on your wallet : ", self.currencies)
+        print("Current balance you own : ", self.balance)
 
 #%% Get XBT to FIAT price
     def getXBTtoFiatPrice(self, fiat):
@@ -214,17 +214,18 @@ class CurrencyViewer:
         # via string recognition
         """
         for i in range(len(self.market)):
-            if(self.market[i][0:3] in self.currencies):
+            if(self.market[i][0:3] in self.currencies['crypto']):
                 crypto_tmp = self.market[i][0:3]
-            elif(self.market[i][0:4] in self.currencies):
+            elif(self.market[i][0:4] in self.currencies['crypto']):
                 crypto_tmp = self.market[i][0:4]
                 
-            elif('X'+self.market[i][0:3] in self.currencies):
+            elif('X'+self.market[i][0:3] in self.currencies['crypto']):
                 crypto_tmp = 'X'+self.market[i][0:3]
         
-            self.values.update({self.market[i] : self.balance[self.currencies.index(crypto_tmp)] * price[i]})
-            print(self.market[i], self.balance[self.currencies.index(crypto_tmp)], price[i])
+            self.values.update({self.market[i] : self.balance['crypto'][self.currencies['crypto'].index(crypto_tmp)] * price[i]})
+            print(self.market[i], self.balance['crypto'][self.currencies['crypto'].index(crypto_tmp)], price[i])
             
+            # Unused fiat_tmp ? What's the point here ?
             if(self.market[i][0]=='D'): fiat_tmp = self.market[i][4:7]    
             else: fiat_tmp = self.market[i][3:6]
             
@@ -235,7 +236,7 @@ class CurrencyViewer:
             self.updateFiatInTotal(i)
             
         for n in range(len(fiat_index)):
-            self.values.update({self.currencies[len(crypto_index)+n] : self.balance[len(crypto_index)+n]})
+            self.values.update({self.currencies['fiat'][n] : self.balance['fiat'][n]})
         
 #%% Displaying
     def displayResults(self):
