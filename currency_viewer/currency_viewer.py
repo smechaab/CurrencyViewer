@@ -4,9 +4,6 @@ Created on Wed Jun  7 19:21:28 2017
 
 @author: smechaab
 
- Prints the account balance and will in future send it via email,
- with obvisouly your own email adress (SOON).
- 
  Please fill and copy your kraken.key file in the same directory.
  
  If you have any questions or suggestions, please email me at 
@@ -23,11 +20,6 @@ Extracts data and store them in "data.csv"
 4. If you don't own any fiat money on your Kraken wallet, it will be displayed the equivalent in USD.
 5. Works with multi-fiat currencies wallets.
 6. Writes data in a csv file located in the project folder (default : data.csv).
-
-NOTE: Some bugs need to be fixed with fiat currencies other than EUR or USD,
-it will be patched in the next one.
-
-
  
 """
 # Includes
