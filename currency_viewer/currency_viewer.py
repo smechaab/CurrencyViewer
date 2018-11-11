@@ -30,17 +30,18 @@ it will be patched in the next one.
 
  
 """
-#%% Includes
+# Includes
 import krakenex
 import csv
 import sys
 import os
 
-#%% Class init
+# Class init
 
 
 class CurrencyViewer:
     DELTA = 0.0000001
+
     def __init__(self):
         self.k = krakenex.API()
         self.k.load_key('kraken.key')
@@ -54,36 +55,49 @@ class CurrencyViewer:
 
         self.btc_total = 0
         self.totals = []
-        self.report_currency = "USD"
+        self.default_currency = "USD"
 
         self.debugmode = False #Change to switch to debugmode 
         
-#%% Main purpose of this script
+# Main purpose of this script
 # It calls every function in order, it allows to get the full data for user
     def processCViewer(self, log=True, currency="USD", time="rfc1123"):
-        self.report_currency = "USD"
+        self.default_currency = "USD"
         balance_result = self.request_balance()
         self.extract_balances(balance_result)
-        price = self.getMarketPrice(self.currencies['crypto'])
-        self.processingConversion(price, self.currencies['crypto'], self.currencies['fiat'])
+        price = self.get_crypto_price_in_btc(self.currencies['crypto'])
+        self.process_conversion(price, self.currencies['crypto'], self.currencies['fiat'])
         self.displayResults()
-        if(log==True):
+        if log:
             self.writeLog(self.values, currency = currency, time = time)
         
-#%% Exit error handling function
-    def _exitError(self):
+# Exit error handling functions
+    def _exit_error(self):
         sys.exit("Can't continue with error")
+
+    def _public_query_error(self, response_with_error):
+        print(response_with_error['error'][0])
+
+        if response_with_error['error'][0] == "EQuery:Invalid asset pair" or "EQuery:Unknown asset pair":
+            print("Check market list, this pair doesn't exist on Kraken exchange."
+                  " This market won't be added in market data.")
+        else:
+            # We leave the program if this is not an Invalid asset pair error
+            self._exit_error()
+
+    def _empty_wallet_error(self):
+        sys.exit("Your wallet seem empty, please check your API keys or your Kraken dashboard.")
 
 #%% Collecting data
     def request_balance(self):
         raw_balance_result = self.k.query_private('Balance')
 
-        if (raw_balance_result['error']) : 
+        if raw_balance_result['error'] :
                 print("Error : ", raw_balance_result['error'])
-                self._exitError()
+                self._exit_error()
                 
         #We find currencies concerned by the user wallet
-        if (self.debugmode == True):
+        if self.debugmode:
             #DEBUG, examples
             raw_balance_result['result']["ZUSD"] = raw_balance_result['result']["XZEC"]
             del raw_balance_result['result']["XZEC"]
@@ -95,114 +109,114 @@ class CurrencyViewer:
         #Extract fiat currencies
         print("Balance result: ", balance_result)
         fiat_index = [c for c in balance_result if (c.startswith("Z"))]
-        if self.report_currency not in fiat_index:
+        if self.default_currency not in fiat_index:
             print("Currencies will be converted in report currency by default")
-            self.currencies['fiat'].append("Z" + self.report_currency)
+            self.currencies['fiat'].append("Z" + self.default_currency)
             self.balance['fiat'].append(0.0)
-        else:           
+        else:
             for i in fiat_index:                
                 self.currencies['fiat'].append(i)
                 self.balance['fiat'].append(float(balance_result[i]))
 
+    def correct_fiat_ticker_syntax(self):
+        self.currencies['fiat'] = [i[1:] if (i.startswith("Z")) else i for i in self.currencies['fiat']]
+        # We remove the first char in purpose to get the correct acronym for market ask (e.g : XXBT -> XBT, ZEUR -> EUR)
+
     def extract_crypto_balance(self, balance_result):
-        #Extract crypto currencies
-        crypto_index = [c for c in balance_result if(not c.startswith("Z"))]
-        #We get every symbols except the ones which starts with "Z" (these are fiat currencies)
-        #print (crypto_index)
-        if crypto_index == [] : sys.exit("Can't find any crypto currency on your wallet yet.")
-        
-        for i in crypto_index:
+        crypto_owned = [c for c in balance_result if(not c.startswith("Z"))]
+        # We get every symbols except the ones which starts with "Z" (these are fiat currencies)
+        # print (crypto_owned)
+        if crypto_owned == [] : self._empty_wallet_error()
+
+        # crypto_owned = [i[1:] if (i.startswith("X")) else i for i in crypto_owned]
+
+        for i in crypto_owned:
+
             self.currencies['crypto'].append(i)
             self.balance['crypto'].append(float(balance_result[i]))           
+
+    def correct_crypto_ticker_syntax(self):
+        self.currencies['crypto'] = [i[1:] if (i.startswith("X")) else i for i in self.currencies['crypto']]
+        # We remove the first char in purpose to get the correct acrynom for market ask \
+        # (e.g : XXBT -> XBT, ZEUR -> EUR)
 
     def extract_balances(self, balance_result):
         
         self.extract_fiat_balance(balance_result)
-        self.extract_crypto_balance(balance_result)        
-        
+        self.correct_fiat_ticker_syntax()
+
+        self.extract_crypto_balance(balance_result)
+        self.correct_crypto_ticker_syntax()
+
         print("Currencies on your wallet : ", self.currencies)
         print("Current balance you own : ", self.balance)
 
-#%% Get XBT to FIAT price
-    def getXBTtoFiatPrice(self, fiat):
+# Getter functions
+    def get_fiat_price_in_btc(self, fiat):
         data_price = self.k.query_public('Ticker',{'pair': "XBT"+fiat,})
         print("XBT"+fiat)
-        #Error ?
-        if (data_price['error']) :
-            
-            print(data_price['error'][0])
-            if (data_price['error'][0] == "EQuery:Invalid asset pair" or "EQuery:Unknown asset pair"):
-                    print("Check market list, ","XBT"+fiat," pair doesn't exist on kraken exchange. Erasing from market list.")
-                    #So we get the currency on BTC market and we will convert it later
-                    #TODO
-            else:
-                # We leave the program if this is not an Invalid asset pair error
-                sys.exit("Can't continue with error")
+
+        if data_price['error'] :
+            self._public_query_error(data_price)
         else:
             index=list(data_price['result'].keys())[0]
         return data_price['result'][index]['c'][0]
 
-#%% getMarketPrice
-    def getMarketPrice(self, crypto_index):
-        #We prepare our list of markets exchange we are interested in
-
-        if type(crypto_index) == list:
-            crypto_index = [i[1:] if (i.startswith("X")) else i for i in crypto_index]
-            # We remove the first char in purpose to get the correct acrynom for market ask \
-            # (e.g : XXBT -> XBT, ZEUR -> EUR)
-            for i in crypto_index:
+    def update_pair_market_list(self, crypto_owned):
+        # We prepare our list of markets exchange we are interested in
+        if type(crypto_owned) == list:
+            for i in crypto_owned:
                 if i != "XBT":
-                    self.market.append(i+"XBT")
+                    self.market.append(i + "XBT")
         else:
-            if crypto_index != "XBT":
-                self.market.append(crypto_index+'XBT')
-                
-        print("Markets concerned : ",self.market) #This is optionnal
-        
-        #Extracts price of every currencies user is involved onto
-        
-        price = []
-        i=0
-        while(i < len(self.market)):  #We use a while loop because the for loop doesn't allow us to modifiy i index during iteration
-            data_price = self.k.query_public('Ticker',{'pair': self.market[i],})
-            print(self.market[i])
-        #Error ?
-            if (data_price['error']) :
-                
-                print(data_price['error'][0])
-                if (data_price['error'][0] == "EQuery:Invalid asset pair" or "EQuery:Unknown asset pair"):
-                        print("Check market list, ",self.market[i]," pair doesn't exist on kraken exchange. Erasing from market list.")
-                        #So we get the currency on BTC market and we will convert it later
-                        self.market.append(self.market[i].replace("EUR","XBT"))
-                        self.market.remove(self.market[i])
+            if crypto_owned != "XBT":
+                self.market.append(crypto_owned + 'XBT')
 
-                else:
-                    # We leave the program if this is not an Invalid asset pair error
-                    sys.exit("Can't continue with error")
-            else:
-                index=list(data_price['result'].keys())[0]
-                p = data_price['result'][index]['c'][0]
-                price.append(p)
-                print("Price of ",self.market[i]," added")
-                price[i] = float(price[i])
-                #(Thanks to plguhur)
-                i+=1
-                #price is a list of str -> cast to float
+    def extract_market_data(self, market):
+        data = self.k.query_public('Ticker', {'pair': market, })
+        print("Extracting ", market, "data")
+
+        if data['error']:
+            print(data['error'][0])
+            self._public_query_error(data)
+            return False
+        return data
+
+    def update_market_price(self, market, price):
+        index = list(market['result'].keys())[0]
+        p = market['result'][index]['c'][0]
+        price.append(p)
+        print("Price of ", market, " added")
+
+    def get_crypto_price_in_btc(self, crypto_owned):
+        price = []
+        market_index = 0
+
+        self.update_pair_market_list(crypto_owned)
+        print("Markets concerned : ",self.market)
+
+        while market_index < len(self.market):
+            # We use a while loop because the for loop doesn't allow us to modify market_index during iteration
+            market_data = self.extract_market_data(self.market[market_index])
+            if market_data:
+                self.update_market_price(market_data, price)
+                price[market_index] = float(price[market_index])
+
+            market_index += 1
         return price
-                
-#%% updateFiatInTotal
-    def updateFiatInTotal(self, fiat):
-        xbt_fiat = self.getXBTtoFiatPrice(fiat)
+
+# Process functions
+    def update_fiat_amount_in_total(self, fiat):
+        xbt_fiat = self.get_fiat_price_in_btc(fiat)
         self.fiatbtc_pair.update({fiat: xbt_fiat})
         self.total[fiat] = self.btc_total * float(xbt_fiat)
 
-#%% processingConversion
-    def processingConversion(self, price, crypto_index, fiat_index):
+    def process_conversion(self, price, crypto_owned, fiat_index):
         #Finally multiplying balance of crypto of user wallet BY actual real-time price of market
         # price of coin in FIAT * amount of coin = Estimated value of currencies in FIAT MONEY
 
-        crypto_index = [i[1:] if(i.startswith("X")) else i for i in crypto_index]
-        fiat_index = [i[1:] if(i.startswith("Z")) else i for i in fiat_index]
+        # crypto_owned = [i[1:] if(i.startswith("X")) else i for i in crypto_owned]
+        # fiat_index = [i[1:] if(i.startswith("Z")) else i for i in fiat_index]
 
         for i in fiat_index:
             self.total.update({i : ''})
@@ -233,7 +247,7 @@ class CurrencyViewer:
             print("btc_total =",self.btc_total)
             
         for i in fiat_index:
-            self.updateFiatInTotal(i)
+            self.update_fiat_amount_in_total(i)
             
         for n in range(len(fiat_index)):
             self.values.update({self.currencies['fiat'][n] : self.balance['fiat'][n]})
@@ -279,7 +293,7 @@ class CurrencyViewer:
                     lastLine = row
                     break
 
-                if currency not in self.total: self.updateFiatInTotal(currency)
+                if currency not in self.total: self.update_fiat_amount_in_total(currency)
                 #If user wants a fiat conversion not in his kraken wallet
 
                 var = 0
