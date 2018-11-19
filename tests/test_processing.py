@@ -10,6 +10,7 @@ class TestProcess:
 
     @classmethod
     def setup_class(cls):
+        print("Call setup")
         cls.cvObject = cv.CurrencyViewer()
         cls.krakenex = krakenex.API()
         cls.krakenex.load_key('kraken.key')
@@ -47,12 +48,12 @@ class TestProcess:
     def test_get_fiat_price_in_btc_usd(self):
         """Test of get price function from XBT -> USD"""
         usd_price = self.krakenex.query_public('Ticker', {'pair': "XBT" + 'USD', })['result']['XXBTZUSD']['c'][0]
-        assert abs(float(self.cvObject.get_fiat_price_in_btc('USD')) - float(usd_price)) < self.DELTA
+        assert abs(float(self.cvObject.get_fiat_price_in_btc('USD')) - float(usd_price)) < self.DELTA * 1000
         
     def test_get_fiat_price_in_btc_eur(self):
         """Test of get price function from XBT -> EUR"""
         eur_price = self.krakenex.query_public('Ticker', {'pair': "XBT" + 'EUR', })['result']['XXBTZEUR']['c'][0]
-        assert abs(float(self.cvObject.get_fiat_price_in_btc('EUR')) - float(eur_price)) < self.DELTA
+        assert abs(float(self.cvObject.get_fiat_price_in_btc('EUR')) - float(eur_price)) < self.DELTA * 1000
 
     def test_get_crypto_price_in_btc_ada(self):
         """Test of get price function from ADA -> XBT"""
@@ -62,20 +63,18 @@ class TestProcess:
     def test_get_crypto_price_in_btc_eos(self):
         """Test of get price function from EOS -> XBT"""
         eos_xbt_price = self.krakenex.query_public('Ticker', {'pair': 'EOS' + 'XBT', })['result']['EOSXBT']['c'][0]
-        assert abs(float(self.cvObject.get_crypto_price_in_btc('EOS')[0]) - float(eos_xbt_price)) < self.DELTA
+        assert abs(float(self.cvObject.get_crypto_price_in_btc('EOS')[1]) - float(eos_xbt_price)) < self.DELTA
 
     def test_get_crypto_price_in_btc_eth(self):
         """Test of get price function from ETH -> XBT"""
         eth_xbt_price = self.krakenex.query_public('Ticker', {'pair': 'ETH' + 'XBT', })['result']['XETHXXBT']['c'][0]
         market_prices = self.cvObject.get_crypto_price_in_btc('ETH')
-        print(eth_xbt_price)
-        print(eth_market_price)
-        assert abs(float(market_prices[0]) - float(eth_xbt_price)) < self.DELTA
+        assert abs(float(market_prices[2]) - float(eth_xbt_price)) < self.DELTA
 
     def test_get_crypto_price_in_btc_dash(self):
         """Test of get price function from DASH -> XBT"""
         dash_xbt_price = self.krakenex.query_public('Ticker', {'pair': 'DASH' + 'XBT', })['result']['DASHXBT']['c'][0]
-        assert abs(float(self.cvObject.getMarketPrice('DASH')[0]) - float(dash_xbt_price)) < self.DELTA
+        assert abs(float(self.cvObject.get_crypto_price_in_btc('DASH')[3]) - float(dash_xbt_price)) < self.DELTA
 
     def test_update_fiat_amount_in_total_usd_functional(self):  # Module Test (not unitary)
         """Test of process and update Total dict file {fiat : total_xbt_in_fiat_price}"""
@@ -110,7 +109,7 @@ class TestProcess:
         with 10 btc"""
         self.cvObject.btc_total = 10
         self.cvObject.update_fiat_amount_in_total('EUR')
-        assert abs(self.cvObject.total['EUR'] - self.cvObject.btc_total * float(self.cvObject.get_fiat_price_in_btc('EUR'))) < self.DELTA
+        assert abs(self.cvObject.total['EUR'] - self.cvObject.btc_total * float(self.cvObject.get_fiat_price_in_btc('EUR'))) < self.DELTA * 10000
 
     def test_update_fiat_amount_in_total_eur_0_btc(self):  # Module Test (not unitary)
         """Test of process and update Total dict file {fiat : total_xbt_in_fiat_price}
