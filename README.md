@@ -119,7 +119,7 @@ pip install pytest
 
 You also need to paste a copy of your [kraken.key](https://www.kraken.com/help/api) file into your tests/ directory.
 
-In order to execute tests, go into your CurrencyViewer working directory and launch:
+In order to execute tests, go into your CurrencyViewer working directory and launch :
 ```
 pytest tests/test_processing.py
 ```
