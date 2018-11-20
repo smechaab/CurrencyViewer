@@ -113,11 +113,11 @@ TESTS:
 Remind to paste a copy of your kraken.key file in your tests/ directory.
 In order to execute tests, go into your CurrencyViewer working directory and execute:
 ```
-pytest tests/tests_processing.py
+pytest tests/test_processing.py
 ```
 or if you have path issue try :
 ```
-python -m pytest tests/tests_processing.py
+python -m pytest tests/test_processing.py
 ```
 To add python path in command
 	 
