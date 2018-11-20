@@ -110,17 +110,23 @@ Interesting variables
 		
 TESTS: 
 ----- 
-Remind to paste a copy of your kraken.key file in your tests/ directory.
-In order to execute tests, go into your CurrencyViewer working directory and execute:
+CurrencyViewer uses [pytest](https://pypi.org/project/pytest/) module for its core tests, be sure to have the package beforehand.
+
+Otherwise you can download and install it with pip:
+```
+pip install pytest
+```
+
+You also need to paste a copy of your [kraken.key](https://www.kraken.com/help/api) file into your tests/ directory.
+
+In order to execute tests, go into your CurrencyViewer working directory and launch:
 ```
 pytest tests/test_processing.py
 ```
-or if you have path issue try :
+or to add python path in pytest command try :
 ```
 python -m pytest tests/test_processing.py
 ```
-To add python path in command
-	 
 	 
 TODO: 
 ----- 
