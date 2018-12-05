@@ -49,19 +49,28 @@ class CurrencyViewer:
         self.totals = []
         self.default_currency = "USD"
 
-        self.debugmode = False #Change to switch to debugmode 
+        self.debugmode = False
+        # Change to switch to debugmode
         
 # Main purpose of this script
 # It calls every function in order, it allows to get the full data for user
-    def processCViewer(self, log=True, currency="USD", time="rfc1123"):
+    def process_cv(self, log=True, currency="USD", time="rfc1123"):
+        """
+        process_cv is the main function to be called for a default usage
+        :param log: boolean, enable or disable logfile creation and/or writing
+        :param currency: string, preferred fiat currency to fill logfile with
+        :param time: string, ('unixtime' or 'rfc1123') preferred time format in logfile
+        :return: nothing
+        """
+
         self.default_currency = "USD"
         balance_result = self.request_balance()
         self.extract_balances(balance_result)
         price = self.get_crypto_price_in_btc(self.currencies['crypto'])
         self.process_conversion(price, self.currencies['crypto'], self.currencies['fiat'])
-        self.displayResults()
+        self.display_results()
         if log:
-            self.writeLog(self.values, currency = currency, time = time)
+            self.write_logfile(self.values, currency=currency, time=time)
         
 # Exit error handling functions
     def _exit_error(self):
@@ -79,6 +88,9 @@ class CurrencyViewer:
 
     def _empty_wallet_error(self):
         sys.exit("Your wallet seem empty, please check your API keys or your Kraken dashboard.")
+
+    def _crypto_in_market_error(self):
+        sys.exit("Error while getting a crypto ticker from market dict file")
 
 #%% Collecting data
     def request_balance(self):
@@ -203,37 +215,48 @@ class CurrencyViewer:
         self.fiatbtc_pair.update({fiat: xbt_fiat})
         self.total[fiat] = self.btc_total * float(xbt_fiat)
 
-    def process_conversion(self, price, crypto_owned, fiat_index):
-        #Finally multiplying balance of crypto of user wallet BY actual real-time price of market
-        # price of coin in FIAT * amount of coin = Estimated value of currencies in FIAT MONEY
-
-        # crypto_owned = [i[1:] if(i.startswith("X")) else i for i in crypto_owned]
-        # fiat_index = [i[1:] if(i.startswith("Z")) else i for i in fiat_index]
-
+    def initialize_total_with_fiat(self, fiat_index):
         for i in fiat_index:
             self.total.update({i : ''})
             self.totals.append(0)
-        #Initializing in case we never get the market data    
+
+    def get_crypto_ticker_from_market(self, market_counter):
+        if self.market[market_counter][0:3] in self.currencies['crypto']:
+            return self.market[market_counter][0:3]
+
+        elif self.market[market_counter][0:4] in self.currencies['crypto']:
+            return self.market[market_counter][0:4]
+
+        elif 'X' + self.market[market_counter][0:3] in self.currencies['crypto']:
+            return 'X' + self.market[market_counter][0:3]
+
+        else:
+            self._crypto_in_market_error
+
+    def process_conversion(self, price, crypto_owned, fiat_index):
+        """
+        Finally multiplying balance of crypto of user wallet BY actual real-time price of market
+        price of coin in FIAT * amount of coin = Estimated value of currencies in FIAT MONEY
+
+        crypto_owned = [i[1:] if(i.startswith("X")) else i for i in crypto_owned]
+        fiat_index = [i[1:] if(i.startswith("Z")) else i for i in fiat_index]
+        """
+        # Initializing in case we never get the market data
+        self.initialize_total_with_fiat(fiat_index)
             
         """
         #Converting data from each fiat to their corresponding market in XBT (XRP with XRPXBT, ETHXBT,... \
         # via string recognition
         """
+
         for i in range(len(self.market)):
-            if(self.market[i][0:3] in self.currencies['crypto']):
-                crypto_tmp = self.market[i][0:3]
-            elif(self.market[i][0:4] in self.currencies['crypto']):
-                crypto_tmp = self.market[i][0:4]
-                
-            elif('X'+self.market[i][0:3] in self.currencies['crypto']):
-                crypto_tmp = 'X'+self.market[i][0:3]
-        
+            crypto_tmp = self.get_crypto_ticker_from_market(i)
             self.values.update({self.market[i] : self.balance['crypto'][self.currencies['crypto'].index(crypto_tmp)] * price[i]})
             print(self.market[i], self.balance['crypto'][self.currencies['crypto'].index(crypto_tmp)], price[i])
             
             # Unused fiat_tmp ? What's the point here ?
-            if(self.market[i][0]=='D'): fiat_tmp = self.market[i][4:7]    
-            else: fiat_tmp = self.market[i][3:6]
+            # if(self.market[i][0]=='D'): fiat_tmp = self.market[i][4:7]
+            # else: fiat_tmp = self.market[i][3:6]
             
             self.btc_total += self.values[self.market[i]]
             print("btc_total =",self.btc_total)
@@ -244,25 +267,25 @@ class CurrencyViewer:
         for n in range(len(fiat_index)):
             self.values.update({self.currencies['fiat'][n] : self.balance['fiat'][n]})
         
-#%% Displaying
-    def displayResults(self):
+# Displaying
+    def display_results(self):
         print(self.values)
         print(self.total)
 
-#%% Log file writer
-    def createLogFile(self, filename, assets, writeFiat):
+# Log file writer
+    def create_logfile(self, filename, assets, write_fiat):
         log_file = open(filename, 'w', newline='') 
         wr = csv.writer(log_file)
         print ("Creating a log file ", filename)
         header = []
-        #Generating the first row (columns titles)
+        # Generating the first row (columns titles)
         header.append("Date")
         
         dict_assets = assets
         
-        if(writeFiat==False):
+        if not write_fiat:
             for fiat in list(dict_assets['result']):
-                if(fiat.startswith("Z")):
+                if fiat.startswith("Z"):
                     dict_assets['result'].pop(fiat)
             
         header = header + list(dict_assets['result'].keys())
@@ -272,55 +295,61 @@ class CurrencyViewer:
         wr.writerow(header)
         log_file.close()
         
-#%% writing log
-    def writeLog(self, data, filename="data.csv", writeFiat=False, currency="USD", time='rfc1123'):
+# writing log
+    def write_logfile(self, data, filename="data.csv", write_fiat=False, currency="USD", time='rfc1123'):
         assets = self.k.query_public('Assets')
-        if(os.path.exists(os.path.join(os.getcwd(),filename)) == False):
-            self.createLogFile(filename, assets, writeFiat)
-            var = 0 #Var (%) is set to 0 when creating file
+        total_variation = 0
+        # total_variation (%) is set to 0 when creating file
+
+        if not os.path.exists(os.path.join(os.getcwd(), filename)):
+            self.create_logfile(filename, assets, write_fiat)
             
-        else: # If file already exists :
+        else:
+            # If logfile already exists :
             with open(filename,'r') as f:
                 for row in reversed(list(csv.reader(f))):
-                    lastLine = row
+                    last_line = row
                     break
 
-                if currency not in self.total: self.update_fiat_amount_in_total(currency)
-                #If user wants a fiat conversion not in his kraken wallet
+                if currency not in self.total:
+                    self.update_fiat_amount_in_total(currency)
+                # If user wants a fiat conversion with a fiat currency not already in his Kraken wallet
 
-                var = 0
-                lastTotal = float(lastLine[-3])
-                if lastLine[-1] == currency and lastTotal > self.DELTA:
-                    var = float((self.total[currency] - lastTotal) / lastTotal)*100
+                last_total = float(last_line[-3])
+                if last_line[-1] == currency and last_total > self.DELTA:
+                    total_variation = float((self.total[currency] - last_total) / last_total)*100
                 
-                #We prepare the Var(%) by checking last Total value and currency
+                # We prepare the total_variation(%) by checking last Total value and currency
             print ("Accumulating data...")
             
-        if(writeFiat==False):
+        if not write_fiat:
+            # We remove the fiat currencies in header dynamically if the user still wants to not write it
+            # If user suddenly decides to add Fiat writing in data logs, it will try to adapt
             for fiat in list(assets['result']):
-                if(fiat.startswith("Z")):
+                if fiat.startswith("Z"):
                     assets['result'].pop(fiat)
-        #We remove the fiat currencies in header dynamically if the user still wants to not write it
-        #If one day or suddenly the user decides to add Fiat writing in data logs, it will try to adapt
-        
+
         log_file = open(filename, "a", newline='')
         wr = csv.writer(log_file)
-    
-        row = []
-        tmp = self.k.query_public('Time')
-        row.append(tmp['result'][time])
-        tmp = list(data.items())
-        
-        for asset in list(assets['result']):
-            if(str(assets['result'][asset]['altname'] + "XBT") in self.values.keys()):
-                assertValue = self.values[str(assets['result'][asset]['altname']) + "XBT"] * float(self.fiatbtc_pair[currency])
-                row.append("{0:.5f}".format(assertValue))
-            else:
-                row.append("0")
 
-        row.append("{0:.2f}".format(self.total[currency]))  
-        row.append("{0:.2f}".format(var))
-        row.append(currency)
-    
+        row = self.create_csv_row(assets, currency, time, total_variation)
+
         wr.writerow(row)
         log_file.close()
+
+    def create_csv_row(self, assets, currency, time, total_variation):
+        row = []
+        data_time = self.k.query_public('Time')
+        row.append(data_time['result'][time])
+        # data_time = list(data.items())
+        for asset in list(assets['result']):
+            if str(assets['result'][asset]['altname'] + "XBT") in self.values.keys():
+                assert_value = self.values[str(assets['result'][asset]['altname']) + "XBT"] \
+                               * float(self.fiatbtc_pair[currency])
+                row.append("{0:.5f}".format(assert_value))
+            else:
+                row.append("0")
+        row.append("{0:.2f}".format(self.total[currency]))
+        row.append("{0:.2f}".format(total_variation))
+        row.append(currency)
+        return row
