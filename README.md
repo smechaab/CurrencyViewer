@@ -43,9 +43,6 @@ Program features
 
 6. Writes data in a csv file located in the project folder (default : data.csv).
 
-NOTE: Some bugs need to be fixed with fiat currencies other than EUR or USD,
-it will be patched in the next one.
-
 Installation
 ------------
 This package requires Python 3.3 or later, and needs [krakenex](https://github.com/veox/python3-krakenex) library.
