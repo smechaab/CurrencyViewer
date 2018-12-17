@@ -63,7 +63,6 @@ class CurrencyViewer:
         :return: nothing
         """
 
-        self.default_currency = "USD"
         balance_result = self.request_balance()
         self.extract_balances(balance_result)
         price = self.get_crypto_price_in_btc(self.currencies['crypto'])
@@ -273,7 +272,7 @@ class CurrencyViewer:
         print(self.total)
 
 # Log file writer
-    def create_logfile(self, filename, assets, write_fiat):
+    def create_log_file(self, filename, assets, write_fiat):
         log_file = open(filename, 'w', newline='') 
         wr = csv.writer(log_file)
         print ("Creating a log file ", filename)
@@ -287,11 +286,12 @@ class CurrencyViewer:
             for fiat in list(dict_assets['result']):
                 if fiat.startswith("Z"):
                     dict_assets['result'].pop(fiat)
-            
+
         header = header + list(dict_assets['result'].keys())
         header.append("Total")
-        header.append("Var(%)")
         header.append("Currency")
+        header.append("Total in BTC")
+        header.append("Var(%)")
         wr.writerow(header)
         log_file.close()
         
@@ -301,8 +301,12 @@ class CurrencyViewer:
         total_variation = 0
         # total_variation (%) is set to 0 when creating file
 
+        if currency not in self.total:
+            self.update_fiat_amount_in_total(currency)
+        # If user wants a fiat conversion with a fiat currency not already in his Kraken wallet
+
         if not os.path.exists(os.path.join(os.getcwd(), filename)):
-            self.create_logfile(filename, assets, write_fiat)
+            self.create_log_file(filename, assets, write_fiat)
             
         else:
             # If logfile already exists :
@@ -311,13 +315,10 @@ class CurrencyViewer:
                     last_line = row
                     break
 
-                if currency not in self.total:
-                    self.update_fiat_amount_in_total(currency)
-                # If user wants a fiat conversion with a fiat currency not already in his Kraken wallet
-
-                last_total = float(last_line[-3])
-                if last_line[-1] == currency and last_total > self.DELTA:
-                    total_variation = float((self.total[currency] - last_total) / last_total)*100
+                last_total_btc = float(last_line[-2])
+                # if last_line[-1] == currency and last_total_btc > self.DELTA:
+                if last_total_btc > self.DELTA:
+                    total_variation = float((self.btc_total - last_total_btc) / last_total_btc)*100
                 
                 # We prepare the total_variation(%) by checking last Total value and currency
             print ("Accumulating data...")
@@ -350,6 +351,8 @@ class CurrencyViewer:
             else:
                 row.append("0")
         row.append("{0:.2f}".format(self.total[currency]))
-        row.append("{0:.2f}".format(total_variation))
         row.append(currency)
+        row.append("{0:.8f}".format(self.btc_total))
+        row.append("{0:.2f}".format(total_variation))
+
         return row
