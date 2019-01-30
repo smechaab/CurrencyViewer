@@ -49,6 +49,8 @@ class CurrencyViewer:
         self.totals = []
         self.default_currency = "USD"
 
+        self.csv_header = []
+
         self.debugmode = False
         # Change to switch to debugmode
         
@@ -69,7 +71,7 @@ class CurrencyViewer:
         self.process_conversion(price, self.currencies['crypto'], self.currencies['fiat'])
         self.display_results()
         if log:
-            self.write_logfile(self.values, currency=currency, time=time)
+            self.write_log_file(self.values, currency=currency, time=time)
         
 # Exit error handling functions
     def _exit_error(self):
@@ -295,8 +297,8 @@ class CurrencyViewer:
         wr.writerow(header)
         log_file.close()
         
-# writing log
-    def write_logfile(self, data, filename="data.csv", write_fiat=False, currency="USD", time='rfc1123'):
+# Logging functions
+    def write_log_file(self, data, filename="data.csv", write_fiat=False, currency="USD", time='rfc1123'):
         assets = self.k.query_public('Assets')
         total_variation = 0
         # total_variation (%) is set to 0 when creating file
@@ -311,10 +313,12 @@ class CurrencyViewer:
         else:
             # If logfile already exists :
             with open(filename,'r') as f:
-                for row in reversed(list(csv.reader(f))):
-                    last_line = row
-                    break
+                self.csv_header = self.get_csv_header(f)
 
+                print("debug : ok")
+                self.compare_data_with_csv_header(f)
+
+                last_line = self.get_csv_last_line(f)
                 last_total_btc = float(last_line[-2])
                 # if last_line[-1] == currency and last_total_btc > self.DELTA:
                 if last_total_btc > self.DELTA:
@@ -338,6 +342,12 @@ class CurrencyViewer:
         wr.writerow(row)
         log_file.close()
 
+    def get_csv_last_line(self, f):
+        for row in reversed(list(csv.reader(f))):
+            last_line = row
+            break
+        return last_line
+
     def create_csv_row(self, assets, currency, time, total_variation):
         row = []
         data_time = self.k.query_public('Time')
@@ -356,3 +366,38 @@ class CurrencyViewer:
         row.append("{0:.2f}".format(total_variation))
 
         return row
+
+    def get_csv_header(self, csv_file):
+        print("debug : HEYYYYYYYYYY")
+        reader = csv.reader(csv_file)
+        header = next(reader)
+        print("debug : 2222222222222222")
+        return header
+
+    def compare_data_with_csv_header(self, csv_file):
+        cryptocurrencies_header = self.csv_header[1:-4] # We get rid of non-crypto names header
+
+        assets = self.k.query_public('Assets')
+        for fiat in list(assets['result']):
+            if fiat.startswith("Z"):
+                assets['result'].pop(fiat)
+
+        list_of_api_currencies = list(assets['result'].keys())
+
+        print("debug :", list(assets['result'].keys()))
+
+        print("debug :", cryptocurrencies_header)
+
+        if cryptocurrencies_header != list_of_api_currencies: # csv file is not up-to-date anymore, need to refactor
+            if list(set(cryptocurrencies_header) - set(list_of_api_currencies)):
+                self.remove_asset_csv_file(csv_file, list(set(cryptocurrencies_header) - set(list_of_api_currencies)))
+            if list(set(list_of_api_currencies) - set(cryptocurrencies_header)):
+                self.add_asset_csv_file(csv_file, list(set(list_of_api_currencies) - set(cryptocurrencies_header)))
+            #else:
+            #    sys.exit("Header in your CSV log file is different than remote API crypto currency list")
+
+    def remove_asset_csv_file(self, csv_file, list_to_remove):
+        print("Need to remove :", list_to_remove)
+
+    def add_asset_csv_file(self, csv_file, list_to_add):
+        print("Need to add :",list_to_add)
